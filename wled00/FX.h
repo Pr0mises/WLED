@@ -116,7 +116,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT  116
+#define MODE_COUNT  117
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -234,6 +234,7 @@
 #define FX_MODE_WASHING_MACHINE        113
 #define FX_MODE_CANDY_CANE             114
 #define FX_MODE_BLENDS                 115
+#define FX_MODE_ADDUP_BALLS            116
 
 class WS2812FX {
   typedef uint16_t (WS2812FX::*mode_ptr)(void);
@@ -246,8 +247,8 @@ class WS2812FX {
     typedef struct Segment { // 24 bytes
       uint16_t start;
       uint16_t stop; //segment invalid if stop == 0
-      uint8_t speed;
-      uint8_t intensity;
+      uint8_t speed;  //speed of the segment
+      uint8_t intensity;  //intensity of the segment
       uint8_t palette;
       uint8_t mode;
       uint8_t options; //bit pattern: msb first: transitional needspixelstate tbd tbd (paused) on reverse selected
@@ -295,12 +296,12 @@ class WS2812FX {
 
   // segment runtime parameters
     typedef struct Segment_runtime { // 28 bytes
-      unsigned long next_time;
-      uint32_t step;
-      uint32_t call;
-      uint16_t aux0;
-      uint16_t aux1;
-      byte* data = nullptr;
+      unsigned long next_time; //next_time is used by the strip to say the ms when the segment should be updated again
+      uint32_t step; //not used, use as variable
+      uint32_t call; // call - is the number of times your effect has been called
+      uint16_t aux0; //not used
+      uint16_t aux1; //not sued
+      byte* data = nullptr; //data can be dynamically allocated at the beginning of your effect for an extra buffer to track pixel data
       bool allocateData(uint16_t len){
         if (data && _dataLen == len) return true; //already allocated
         deallocateData();
@@ -463,6 +464,7 @@ class WS2812FX {
       _mode[FX_MODE_WASHING_MACHINE]         = &WS2812FX::mode_washing_machine;
       _mode[FX_MODE_CANDY_CANE]              = &WS2812FX::mode_candy_cane;
       _mode[FX_MODE_BLENDS]                  = &WS2812FX::mode_blends;
+      _mode[FX_MODE_ADDUP_BALLS]             = &WS2812FX::mode_addup_balls;
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -673,7 +675,8 @@ class WS2812FX {
       mode_dancing_shadows(void),
       mode_washing_machine(void),
       mode_candy_cane(void),
-      mode_blends(void);
+      mode_blends(void),
+      mode_addup_balls(void);
 
   private:
     NeoPixelWrapper *bus;
@@ -761,7 +764,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
 "Heartbeat","Pacifica","Candle Multi", "Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal", "Sine","Phased Noise",
-"Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends"
+"Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends","AddUp Balls"
 ])=====";
 
 

@@ -3753,3 +3753,110 @@ uint16_t WS2812FX::mode_blends(void) {
 
   return FRAMETIME;
 }
+
+/*
+*  Bouncing Balls Effect
+*/
+uint16_t WS2812FX::mode_addup_balls(void) 
+{
+ //SEGLEN = die Anzahl die man in segment eintsellt (11 leds 1-11 also -1  machen)
+  //uint16_t index = (255); //intensity vllt mehrere balls die gleichzeitig hochgehn?
+  if (!SEGENV.allocateData(SEGLEN)) return mode_static(); //allocation failed
+
+  if(SEGENV.call == 0)
+  {
+    SEGENV.data[SEGENV.aux1] = random16(255);
+  }
+  byte gap = 2 + (255 >> 5);
+  uint32_t cycleTime = 50 + (255 - SEGMENT.speed)*2;
+  uint32_t it = now / cycleTime;
+  if (it != SEGENV.step) //new color
+  {
+    //SEGENV.aux0 = (SEGENV.aux0 + 1) % gap;
+    SEGENV.aux0++;
+    if(SEGENV.aux0 == SEGLEN - SEGENV.aux1) // vllt noch -1? 11-0 = 11 aux0=10 (if(SEGENV.aux1 != 0) wird nicht gecalled)
+    {
+      SEGENV.aux1++;
+      SEGENV.aux0 = 0;
+      SEGENV.data[SEGENV.aux1] = random16(255);
+      while(true)
+      {
+        if(SEGENV.data[SEGENV.aux1] == SEGCOLOR(1))
+        {
+          SEGENV.data[SEGENV.aux1] = random16(255);
+          continue;
+        }
+        else if(SEGENV.data[SEGENV.aux1] == SEGENV.data[SEGENV.aux1 - 1])
+        {
+          SEGENV.data[SEGENV.aux1] = random16(255);
+          continue;
+        }
+        else
+        {
+          break;
+        }
+        
+      }
+    }
+    if(SEGENV.aux1 == SEGLEN)
+    {
+      SEGENV.aux1 = 0;
+      for(uint16_t i = 0; i < SEGLEN; i++)
+      {
+        setPixelColor(i, SEGCOLOR(1));
+      }
+    }
+    if(SEGENV.aux0 == 0)
+    {
+      SEGENV.data[SEGENV.aux1] = random16(255);
+    }
+    SEGENV.step = it;
+  }
+
+  for(uint16_t i = 0; i < SEGLEN - SEGENV.aux1; i++)
+  {
+    if(i == SEGENV.aux0)
+    {
+        setPixelColor(i, color_from_palette(SEGENV.data[SEGENV.aux1], true, PALETTE_SOLID_WRAP, 0));
+    } 
+    else
+    {
+      setPixelColor(i, SEGCOLOR(1));
+    }
+  }
+
+  for(uint16_t k = SEGLEN - SEGENV.aux1; k < SEGLEN; k++) //aux1 == led slot (1-SEGLEN)
+  {
+    setPixelColor(k, color_from_palette(SEGENV.data[SEGLEN - k - 1], true, PALETTE_SOLID_WRAP, 0));
+  }
+  return FRAMETIME;
+}
+
+/*uint16_t WS2812FX::mode_addup_balls(void) 
+{
+  fill(SEGCOLOR(1));
+
+  if(SEGENV.aux0 < SEGLEN)
+  { 
+    SEGENV.step++;
+    if(SEGENV.step % 2 == 0)
+    {
+      for(uint16_t k = 0; k <= SEGENV.aux1; k++)
+      {
+        setPixelColor(SEGENV.aux0 - k, SEGCOLOR(0));
+      }
+      SEGENV.step = 0;
+      SEGENV.aux0++;
+    }
+  }
+  else if(SEGENV.aux0 == SEGLEN && SEGENV.aux1 < SEGLEN)
+  {
+    SEGENV.aux1++;
+    SEGENV.aux0 = SEGENV.aux1;
+  }
+  
+  //setPixelColor(startpos, 0, 150, 0);
+  //setPixelColor(endpos, 0, 150, 0);
+  return FRAMETIME;
+}
+*/
